@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>BruteGuard</title>
+<style>
+:root{
+  --bg:#09090b; --panel:#0e0e11; --card:#101014; --card-2:#141419;
+  --border:#232329; --border-soft:#1c1c21; --border-strong:#2e2e36;
+  --text:#f4f4f5; --muted:#a1a1aa; --dim:#71717a; --faint:#4b4b53;
+  --em:#10b981; --em-bright:#34d399; --em-glow:rgba(16,185,129,.45);
+  --em-soft:rgba(16,185,129,.12); --em-border:rgba(16,185,129,.42);
+  --red:#ef4444; --red-b:#f87171; --orange:#f97316; --orange-b:#fb923c;
+  --amber:#f59e0b; --amber-b:#fbbf24; --lime:#84cc16; --lime-b:#a3e635;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --r-lg:16px; --r-md:12px; --r-sm:8px;
+  --shadow-card:0 1px 0 rgba(255,255,255,.03) inset,0 12px 32px -18px rgba(0,0,0,.8);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:15px;line-height:1.55;min-height:100vh;display:flex;flex-direction:column;
+  -webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background-image:linear-gradient(rgba(16,185,129,.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(16,185,129,.05) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000 30%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000 30%,transparent 100%)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 120% 90% at 50% 110%,rgba(0,0,0,.55),transparent 60%)}
+::selection{background:rgba(16,185,129,.3)}
+a{color:var(--em-bright);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{letter-spacing:-.02em;line-height:1.15;margin:0}
+p{margin:0}
+button{font-family:inherit}
+.mono{font-family:var(--mono)}
+.shell{width:100%;max-width:1120px;margin:0 auto;padding:0 20px}
+:focus-visible{outline:2px solid rgba(16,185,129,.6);outline-offset:2px;border-radius:4px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#27272a;border-radius:8px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#3f3f46}
+
+/* header */
+.site-header{position:sticky;top:0;z-index:50;height:60px;
+  background:rgba(9,9,11,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border-soft)}
+.header-inner{height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:9px;color:var(--text);font-weight:800;font-size:16.5px}
+.brand:hover{text-decoration:none}
+.brand svg{width:25px;height:25px;flex:none}
+.brand-tag{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--em-bright);border:1px solid var(--em-border);background:var(--em-soft);
+  border-radius:999px;padding:2px 8px}
+.main-nav{display:flex;align-items:center;gap:2px}
+.main-nav a{color:var(--muted);font-size:13px;font-weight:600;padding:7px 11px;border-radius:9px;
+  border:1px solid transparent;transition:.15s}
+.main-nav a:hover{color:var(--text);background:#18181b;text-decoration:none}
+.main-nav a.active{color:var(--em-bright);background:var(--em-soft);border-color:rgba(16,185,129,.28)}
+.nav-toggle{display:none;background:none;border:1px solid var(--border-strong);border-radius:10px;width:40px;height:38px;cursor:pointer;position:relative}
+.nav-toggle span{position:absolute;left:10px;right:10px;height:2px;background:var(--muted);border-radius:2px;transition:.2s}
+.nav-toggle span:nth-child(1){top:12px}.nav-toggle span:nth-child(2){top:18px}.nav-toggle span:nth-child(3){top:24px}
+.nav-open .nav-toggle span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.nav-open .nav-toggle span:nth-child(2){opacity:0}
+.nav-open .nav-toggle span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+  border-radius:var(--r-md);padding:11px 18px;font-size:14px;font-weight:600;line-height:1;
+  border:1px solid transparent;transition:.16s;text-decoration:none;user-select:none}
+.btn:hover{text-decoration:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#059669,#10b981);color:#fff;
+  box-shadow:0 10px 28px -10px var(--em-glow),0 1px 0 rgba(255,255,255,.18) inset}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 14px 34px -10px var(--em-glow)}
+.btn-ghost{background:transparent;border-color:var(--border-strong);color:#d4d4d8}
+.btn-ghost:hover{border-color:var(--em-border);color:var(--em-bright);background:var(--em-soft)}
+.btn-danger-ghost{background:transparent;border-color:rgba(239,68,68,.35);color:var(--red-b)}
+.btn-danger-ghost:hover{background:rgba(239,68,68,.1)}
+.btn-sm{padding:8px 13px;font-size:12.5px;border-radius:10px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;flex:none;
+  background:#0b0b0e;border:1px solid var(--border-strong);border-radius:var(--r-md);
+  color:var(--muted);cursor:pointer;transition:.15s}
+.icon-btn:hover{color:var(--em-bright);border-color:var(--em-border);background:var(--em-soft)}
+.icon-btn svg{width:17px;height:17px}
+
+/* views */
+main{flex:1}
+.view{display:none;padding:34px 0 64px;animation:viewIn .32s ease both}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page-head{margin-bottom:26px}
+.kicker{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--em-bright);margin-bottom:10px}
+.page-head h2{font-size:clamp(1.55rem,3.4vw,2.15rem);font-weight:800}
+.page-sub{color:var(--muted);margin-top:9px;max-width:680px}
+.muted{color:var(--dim);font-weight:500}
+
+/* cards */
+.card{position:relative;background:linear-gradient(180deg,var(--card),#0d0d10);
+  border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;box-shadow:var(--shadow-card)}
+.card.hairline::before{content:"";position:absolute;top:0;left:22px;right:22px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(16,185,129,.4),transparent)}
+.card-title{font-size:15px;font-weight:700;margin:0 0 4px}
+.card-sub{font-size:12.5px;color:var(--dim);margin-bottom:12px}
+.stack{display:flex;flex-direction:column;gap:18px;min-width:0}
+.grid-2{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tile-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{background:var(--card-2);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.tile-v{font-size:21px;font-weight:700;color:var(--em-bright)}
+.tile-l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.divider{height:1px;background:var(--border-soft);margin:18px 0;border:0}
+
+/* HOME */
+.hero{position:relative;padding:64px 0 58px}
+.hero::before{content:"";position:absolute;inset:-80px 0 auto;height:460px;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 55% 60% at 50% 0%,rgba(16,185,129,.14),transparent 70%)}
+.hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:44px;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--em-bright);
+  border:1px solid var(--em-border);background:var(--em-soft);border-radius:999px;padding:6px 13px;margin-bottom:20px}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--em-bright);box-shadow:0 0 10px var(--em-glow);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero h1{font-size:clamp(2.15rem,5.2vw,3.45rem);font-weight:850;letter-spacing:-.032em}
+.grad{background:linear-gradient(92deg,#34d399,#10b981 45%,#a7f3d0);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-sub{color:var(--muted);font-size:16.5px;max-width:520px;margin-top:16px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--muted);
+  border:1px solid var(--border-strong);background:#131318;border-radius:999px;padding:4px 11px}
+.chip svg{width:11px;height:11px;color:var(--em-bright)}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:52px;
+  border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--card)}
+.hero-stats > div{padding:18px 20px;border-right:1px solid var(--border-soft)}
+.hero-stats > div:last-child{border-right:0}
+.hero-stats dt{font-size:24px;font-weight:800;color:var(--em-bright);font-family:var(--mono)}
+.hero-stats dd{margin:3px 0 0;font-size:12px;color:var(--dim);line-height:1.45}
+.term{background:#0a0a0d;border:1px solid var(--border-strong);border-radius:var(--r-lg);
+  box-shadow:0 24px 60px -24px rgba(0,0,0,.9),0 0 0 1px rgba(16,185,129,.06);overflow:hidden}
+.term-bar{display:flex;align-items:center;gap:6px;padding:11px 14px;border-bottom:1px solid var(--border-soft);background:#0d0d11}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#27272a}
+.term-bar i:nth-child(1){background:rgba(239,68,68,.55)}
+.term-bar i:nth-child(2){background:rgba(245,158,11,.55)}
+.term-bar i:nth-child(3){background:rgba(16,185,129,.55)}
+.term-bar span{margin-left:8px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.term-body{padding:16px 18px;font-family:var(--mono);font-size:12.6px;line-height:1.9;min-height:172px}
+.term-line{opacity:0;animation:termIn .4s ease forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term-line:nth-child(1){animation-delay:.2s}
+.term-line:nth-child(2){animation-delay:.8s}
+.term-line:nth-child(3){animation-delay:1.5s}
+.term-line:nth-child(4){animation-delay:2.2s}
+.term-line:nth-child(5){animation-delay:2.9s}
+@keyframes termIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.t-dim{color:var(--dim)}.t-em{color:var(--em-bright)}.t-red{color:var(--red-b)}.t-amber{color:var(--amber-b)}
+.cursor{display:inline-block;width:8px;height:15px;background:var(--em-bright);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.section{padding:34px 0}
+.section-head{margin-bottom:24px}
+.section-head h2{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800}
+.section-head p{color:var(--dim);margin-top:8px}
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.feat{display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,var(--card),#0d0d10);
+  border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;color:var(--text);
+  transition:.18s;position:relative}
+.feat:hover{border-color:var(--em-border);box-shadow:0 0 34px -12px var(--em-glow);
+  transform:translateY(-3px);text-decoration:none}
+.feat-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:var(--em-soft);border:1px solid rgba(16,185,129,.3);color:var(--em-bright);font-size:18px}
+.feat h3{font-size:15.5px;font-weight:700}
+.feat p{font-size:13px;color:var(--muted);flex:1}
+.feat-go{font-size:12px;font-weight:700;color:var(--em-bright);font-family:var(--mono)}
+.cta-band{text-align:center;border:1px solid rgba(16,185,129,.35);border-radius:20px;padding:44px 24px;
+  background:linear-gradient(180deg,rgba(16,185,129,.09),rgba(16,185,129,.02));position:relative;overflow:hidden}
+.cta-band::before{content:"";position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--em),transparent)}
+.cta-band h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800}
+.cta-band p{color:var(--muted);margin:12px auto 0;max-width:460px}
+.cta-band .hero-cta{justify-content:center;margin-top:26px}
+
+/* analyzer */
+.field-label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:16px 0 7px}
+.field-label:first-child{margin-top:0}
+.input{width:100%;background:#0b0b0e;border:1px solid var(--border-strong);border-radius:var(--r-md);
+  color:var(--text);padding:12px 14px;font-size:14px;transition:.15s;font-family:var(--sans)}
+.input::placeholder{color:var(--faint)}
+.input:focus{outline:none;border-color:var(--em-border);box-shadow:0 0 0 3px rgba(16,185,129,.14)}
+.input.mono{font-family:var(--mono);font-size:15px;letter-spacing:.04em}
+.input-row{display:flex;gap:8px}
+.input-row .input{flex:1;min-width:0}
+textarea.input{resize:vertical;min-height:120px;font-family:var(--mono);font-size:13px;line-height:1.8}
+.meter-wrap{margin-top:20px}
+.meter{display:flex;gap:6px}
+.meter i{flex:1;height:10px;border-radius:999px;background:#1a1a1f;position:relative;overflow:hidden;transition:.3s}
+.meter i.on{background:currentColor;box-shadow:0 0 14px -3px currentColor}
+.sc-0{color:var(--red)}.sc-1{color:var(--orange)}.sc-2{color:var(--amber)}.sc-3{color:var(--lime)}.sc-4{color:var(--em)}
+.verdict-row{display:flex;align-items:baseline;justify-content:space-between;margin-top:12px;gap:10px}
+.verdict-label{font-size:17px;font-weight:800}
+.verdict-bits{font-size:12.5px;color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.chip.on{color:var(--em-bright);border-color:var(--em-border);background:var(--em-soft)}
+.chip.warn{color:var(--amber-b);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.09)}
+.chip.bad{color:var(--red-b);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.09)}
+.checklist{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
+.checklist li{display:flex;gap:8px;font-size:12.8px;color:var(--dim);align-items:flex-start}
+.checklist li.ok{color:#d4d4d8}
+.checklist li .mark{color:var(--faint);font-weight:700}
+.checklist li.ok .mark{color:var(--em-bright)}
+.warnings{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.warn-line{display:flex;gap:9px;align-items:flex-start;font-size:12.8px;padding:10px 13px;border-radius:var(--r-sm);
+  background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);color:#fca5a5;animation:viewIn .25s ease both}
+.warn-line b{color:#fecaca}
+.suggestions{margin-top:16px}
+.suggestions ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.suggestions li{font-size:12.8px;color:var(--muted)}
+.suggestions .s-title{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--em-bright)}
+.crack-table{display:flex;flex-direction:column}
+.crack-row{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:12px 4px;
+  border-top:1px solid var(--border-soft);transition:.15s}
+.crack-row:first-child{border-top:0}
+.crack-row:hover{background:rgba(255,255,255,.015)}
+.crack-l{font-size:13px;font-weight:600}
+.crack-d{grid-column:1;font-size:11.5px;color:var(--dim)}
+.crack-t{grid-column:2;grid-row:1 / span 2;align-self:center;font-family:var(--mono);font-size:13.5px;font-weight:700;text-align:right}
+.tv-red{color:var(--red-b)}.tv-orange{color:var(--orange-b)}.tv-amber{color:var(--amber-b)}.tv-lime{color:var(--lime-b)}.tv-em{color:var(--em-bright)}
+.empty{color:var(--faint);font-size:13px;font-style:italic;padding:8px 0}
+.banner{border-radius:var(--r-md);padding:14px 16px;font-size:13px;border:1px solid;display:flex;gap:10px;align-items:flex-start;animation:viewIn .3s ease both}
+.banner.bad{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);color:#fca5a5}
+.banner.ok{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.3);color:#6ee7b7}
+.banner .b-sub{display:block;font-size:11.5px;opacity:.75;margin-top:3px}
+
+/* forge */
+.tabs{display:flex;gap:6px;background:var(--card-2);border:1px solid var(--border);border-radius:12px;padding:5px;margin-bottom:18px;width:max-content;max-width:100%;overflow-x:auto}
+.tab{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;
+  padding:8px 15px;border-radius:9px;cursor:pointer;transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{background:#1c1c22;color:var(--em-bright);box-shadow:0 0 0 1px rgba(16,185,129,.25)}
+.opt-row{display:flex;flex-wrap:wrap;gap:14px 22px;margin-top:14px;align-items:center}
+.opt{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);cursor:pointer}
+.slider-row{display:flex;align-items:center;gap:14px}
+.slider-row input[type=range]{flex:1;accent-color:var(--em)}
+.slider-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--em-bright);min-width:34px;text-align:center;background:#0b0b0e;border:1px solid var(--border-strong);border-radius:9px;padding:6px 0}
+input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;background:#1c1c22;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--em-bright);
+  border:3px solid #05231a;box-shadow:0 0 12px var(--em-glow);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--em-bright);border:3px solid #05231a;box-shadow:0 0 12px var(--em-glow);cursor:pointer}
+.cand-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.cand{display:flex;gap:12px;align-items:center;padding:13px 15px;background:var(--card-2);
+  border:1px solid var(--border);border-radius:var(--r-md);transition:.18s;animation:viewIn .3s ease both}
+.cand:hover{border-color:var(--em-border);box-shadow:0 0 22px -10px var(--em-glow)}
+.cand-rank{width:26px;height:26px;flex:none;border-radius:50%;border:1px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.cand-pw{flex:1;min-width:0;font-family:var(--mono);font-size:14px;word-break:break-all;color:var(--text)}
+.cand-meta{display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex:none}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;border-radius:999px;padding:3px 9px;border:1px solid}
+.bg-0{color:var(--red-b);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+.bg-1{color:var(--orange-b);border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.08)}
+.bg-2{color:var(--amber-b);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+.bg-3{color:var(--lime-b);border-color:rgba(132,204,22,.4);background:rgba(132,204,22,.08)}
+.bg-4{color:var(--em-bright);border-color:var(--em-border);background:var(--em-soft)}
+.cand-bits{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.cand-actions{display:flex;gap:6px;flex:none}
+.mini-btn{background:transparent;border:1px solid var(--border-strong);color:var(--muted);border-radius:8px;
+  padding:7px 10px;font-size:11.5px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap;font-family:inherit}
+.mini-btn:hover{border-color:var(--em-border);color:var(--em-bright);background:var(--em-soft)}
+.action-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center}
+
+/* vault */
+.vault-box{max-width:760px;margin:0 auto;width:100%}
+.vault-entry{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:var(--card-2);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:13px 15px;margin-top:10px;flex-wrap:wrap}
+.vault-entry-main{min-width:0;flex:1}
+.vault-site{font-weight:700;font-size:15px;color:var(--text)}
+.vault-user{font-size:12px;color:var(--muted);margin-top:3px;word-break:break-all}
+.vault-pass{font-family:var(--mono);font-size:13px;color:#38bdf8;margin-top:5px;word-break:break-all}
+.vault-actions{display:flex;gap:6px;flex:none}
+
+/* contact */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:1000px;margin:0 auto;width:100%}
+.contact-info{display:flex;flex-direction:column;gap:14px}
+.contact-item{display:flex;gap:13px;align-items:flex-start;padding:15px 16px;
+  background:var(--card-2);border:1px solid var(--border);border-radius:var(--r-md)}
+.contact-item .ci-ic{width:36px;height:36px;flex:none;border-radius:10px;
+  background:var(--em-soft);border:1px solid rgba(16,185,129,.3);color:var(--em-bright);
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.contact-item .ci-t{font-size:13.5px;font-weight:700;color:var(--text)}
+.contact-item .ci-v{font-size:12.5px;color:var(--muted);margin-top:3px;word-break:break-word}
+.contact-item .ci-v a{color:var(--em-bright)}
+.form-msg{margin-top:14px;font-size:13px;min-height:20px}
+.form-msg.ok{color:#8ef0bd}
+.form-msg.bad{color:#ff9b9b}
+
+/* awareness */
+.aw-intro{background:linear-gradient(180deg,rgba(16,185,129,.08),rgba(16,185,129,.02));
+  border:1px solid var(--em-border);border-radius:var(--r-lg);padding:24px;margin-bottom:26px}
+.aw-intro h3{font-size:18px;margin-bottom:8px;color:var(--em-bright)}
+.aw-intro p{font-size:14px;color:var(--muted);line-height:1.7}
+.aw-intro b{color:var(--text)}
+.aw-toc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;
+  padding:14px 16px;background:var(--card-2);border:1px solid var(--border);border-radius:var(--r-md)}
+.aw-toc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);align-self:center;margin-right:4px}
+.aw-toc a{font-size:12.5px;font-weight:600;color:var(--muted);padding:6px 12px;border-radius:999px;
+  background:var(--card);border:1px solid var(--border-strong);transition:.15s}
+.aw-toc a:hover{color:var(--em-bright);border-color:var(--em-border);background:var(--em-soft);text-decoration:none}
+.aw-section{margin-bottom:34px;scroll-margin-top:80px}
+.aw-section-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.aw-num{width:36px;height:36px;flex:none;border-radius:10px;background:var(--em-soft);
+  border:1px solid var(--em-border);color:var(--em-bright);font-family:var(--mono);font-weight:800;font-size:14px;
+  display:flex;align-items:center;justify-content:center}
+.aw-section-head h3{font-size:19px;font-weight:800}
+.aw-section-head p{font-size:12.5px;color:var(--dim);margin-top:2px}
+
+.attack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.attack-card{padding:18px;background:linear-gradient(180deg,var(--card),#0d0d10);
+  border:1px solid var(--border);border-radius:var(--r-md);border-left:3px solid var(--red)}
+.attack-card .ac-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.attack-card .ac-ic{font-size:20px}
+.attack-card .ac-title{font-size:14.5px;font-weight:700;color:var(--text)}
+.attack-card .ac-desc{font-size:12.8px;color:var(--muted);line-height:1.65;margin-bottom:10px}
+.attack-card .ac-example{font-size:11.5px;color:var(--dim);background:#0a0a0d;border:1px solid var(--border-soft);
+  border-radius:var(--r-sm);padding:8px 10px;font-family:var(--mono);line-height:1.5}
+.attack-card .ac-example b{color:var(--red-b);font-weight:700}
+.attack-card .ac-defend{margin-top:10px;font-size:12px;color:#a7f3c4;background:rgba(16,185,129,.06);
+  border:1px solid rgba(16,185,129,.25);border-radius:var(--r-sm);padding:8px 10px;line-height:1.5}
+.attack-card .ac-defend b{color:var(--em-bright)}
+
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dd-col{padding:18px;border-radius:var(--r-md);border:1px solid var(--border);
+  background:linear-gradient(180deg,var(--card),#0d0d10)}
+.dd-col.do{border-color:rgba(16,185,129,.35)}
+.dd-col.dont{border-color:rgba(239,68,68,.35)}
+.dd-col h4{font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dd-col.do h4{color:var(--em-bright)}
+.dd-col.dont h4{color:var(--red-b)}
+.dd-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px}
+.dd-list li{display:flex;gap:9px;font-size:12.8px;color:var(--muted);line-height:1.55;align-items:flex-start}
+.dd-list li span.mk{flex:none;font-weight:800;font-size:13px;line-height:1.4}
+.dd-col.do .mk{color:var(--em-bright)}
+.dd-col.dont .mk{color:var(--red-b)}
+
+.fa2-steps{display:flex;flex-direction:column;gap:12px}
+.fa2-step{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;
+  background:var(--card-2);border:1px solid var(--border);border-radius:var(--r-md)}
+.fa2-step .fa2-n{width:32px;height:32px;flex:none;border-radius:50%;background:var(--em-soft);
+  border:1px solid var(--em-border);color:var(--em-bright);font-weight:800;
+  display:flex;align-items:center;justify-content:center;font-size:13px}
+.fa2-step .fa2-t{font-size:13.5px;font-weight:700;color:var(--text)}
+.fa2-step .fa2-d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.6}
+.fa2-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.fa2-method{padding:14px;text-align:center;border-radius:var(--r-md);
+  background:var(--card-2);border:1px solid var(--border)}
+.fa2-method .fm-ic{font-size:24px;margin-bottom:6px}
+.fa2-method .fm-t{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:4px}
+.fa2-method .fm-d{font-size:11px;color:var(--dim);line-height:1.5}
+.fa2-method.best{border-color:var(--em-border);background:rgba(16,185,129,.06)}
+.fa2-method.best .fm-t{color:var(--em-bright)}
+
+.phish-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.phish-sign{display:flex;gap:12px;align-items:flex-start;padding:14px 15px;
+  background:var(--card-2);border:1px solid var(--border);border-radius:var(--r-md)}
+.phish-sign .ps-ic{width:34px;height:34px;flex:none;border-radius:9px;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red-b);
+  display:flex;align-items:center;justify-content:center;font-size:15px}
+.phish-sign .ps-t{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.phish-sign .ps-d{font-size:12px;color:var(--muted);line-height:1.55}
+.phish-sign .ps-d b{color:var(--amber-b)}
+
+.emg-steps{display:flex;flex-direction:column;gap:10px}
+.emg-step{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;
+  background:linear-gradient(180deg,var(--card-2),#0d0d10);
+  border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r-md)}
+.emg-step .es-n{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--amber-b);flex:none;line-height:1;width:28px}
+.emg-step .es-t{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:3px}
+.emg-step .es-d{font-size:12.5px;color:var(--muted);line-height:1.6}
+
+.aw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px}
+.aw-stat{padding:16px;text-align:center;border-radius:var(--r-md);
+  background:var(--card-2);border:1px solid var(--border)}
+.aw-stat .as-v{font-size:22px;font-weight:800;color:var(--em-bright);font-family:var(--mono)}
+.aw-stat .as-l{font-size:11px;color:var(--dim);margin-top:4px;line-height:1.4}
+
+/* quiz */
+.quiz-shell{max-width:780px;margin:0 auto;width:100%}
+.quiz-progress{height:8px;border-radius:999px;background:#1a1a1f;overflow:hidden;margin-bottom:20px;border:1px solid var(--border-soft)}
+.quiz-progress > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#059669,#34d399);width:0%;transition:width .4s ease}
+.quiz-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.quiz-meta .qm-r{font-family:var(--mono);font-size:12.5px;color:var(--dim);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.quiz-meta .qm-s{font-family:var(--mono);font-size:12.5px;color:var(--em-bright);font-weight:700}
+.quiz-q{font-size:17px;font-weight:700;line-height:1.5;margin-bottom:18px;color:var(--text)}
+.quiz-opts{display:flex;flex-direction:column;gap:10px}
+.quiz-opt{text-align:left;padding:14px 16px;border-radius:var(--r-md);cursor:pointer;
+  background:var(--card-2);border:1px solid var(--border);color:var(--text);font-size:14px;
+  transition:.15s;font-family:inherit;line-height:1.5;display:flex;gap:12px;align-items:flex-start}
+.quiz-opt:hover:not(:disabled){border-color:var(--em-border);background:rgba(16,185,129,.05);transform:translateX(3px)}
+.quiz-opt:disabled{cursor:default}
+.quiz-opt .qo-mark{width:26px;height:26px;flex:none;border-radius:7px;
+  background:#1c1c22;border:1px solid var(--border-strong);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;font-family:var(--mono);transition:.15s}
+.quiz-opt .qo-text{flex:1;padding-top:2px}
+.quiz-opt.correct{border-color:var(--em);background:rgba(16,185,129,.1);box-shadow:0 0 0 1px var(--em) inset}
+.quiz-opt.correct .qo-mark{background:var(--em);border-color:var(--em);color:#052e22}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(239,68,68,.08)}
+.quiz-opt.wrong .qo-mark{background:var(--red);border-color:var(--red);color:#3a0d0d}
+.quiz-opt.faded{opacity:.5}
+.quiz-feedback{margin-top:16px;padding:14px 16px;border-radius:var(--r-md);
+  font-size:13px;line-height:1.6;border:1px solid;animation:viewIn .3s ease both}
+.quiz-feedback.ok{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.35);color:#a7f3c4}
+.quiz-feedback.bad{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.quiz-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.quiz-start{text-align:center;padding:26px 8px}
+.quiz-start .qs-ic{font-size:48px;margin-bottom:12px;line-height:1}
+.quiz-start h3{font-size:19px;font-weight:800;margin-bottom:8px}
+.quiz-start p{font-size:13.5px;color:var(--muted);max-width:480px;margin:0 auto 18px;line-height:1.7}
+.quiz-result{text-align:center;padding:22px 8px}
+.quiz-result .qr-score{font-family:var(--mono);font-size:48px;font-weight:800;line-height:1;
+  color:var(--em-bright);margin-bottom:6px}
+.quiz-result .qr-sub{font-size:13.5px;color:var(--muted);margin-bottom:20px}
+.quiz-result .qr-grade{font-size:17px;font-weight:800;margin-bottom:8px}
+.quiz-result .qr-msg{font-size:13.5px;color:var(--muted);max-width:520px;margin:0 auto 22px;line-height:1.7}
+.qr-breakdown{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:520px;margin:0 auto 22px}
+.qr-bd-item{padding:12px;border-radius:var(--r-md);background:var(--card-2);border:1px solid var(--border)}
+.qr-bd-item .qb-v{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--em-bright)}
+.qr-bd-item .qb-l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.qr-bd-item.bad .qb-v{color:var(--red-b)}
+
+/* footer / toast */
+.site-footer{margin-top:auto;border-top:1px solid var(--border-soft);background:rgba(9,9,11,.7)}
+.footer-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:18px 0;text-align:center}
+.footer-inner p{font-size:12.5px;color:var(--dim)}
+.footer-inner b{color:var(--muted)}
+.toasts{position:fixed;right:16px;bottom:16px;z-index:100;display:flex;flex-direction:column;gap:9px;max-width:min(340px,calc(100vw - 32px))}
+.toast{background:#141419;border:1px solid var(--border-strong);border-left:3px solid var(--em);
+  color:#e4e4e7;font-size:12.8px;border-radius:11px;padding:11px 14px;box-shadow:0 14px 40px -12px rgba(0,0,0,.85);
+  animation:toastIn .25s ease both}
+.toast.err{border-left-color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.toast.out{transition:.3s;opacity:0;transform:translateY(6px)}
+
+/* responsive */
+@media (max-width:960px){
+  .hero-grid{grid-template-columns:1fr;gap:30px}
+  .grid-2{grid-template-columns:1fr}
+  .contact-grid{grid-template-columns:1fr}
+  .attack-grid{grid-template-columns:1fr}
+  .fa2-methods{grid-template-columns:1fr}
+  .phish-grid{grid-template-columns:1fr}
+  .aw-stats{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr}
+}
+@media (max-width:860px){
+  .nav-toggle{display:block}
+  .main-nav{position:absolute;top:60px;left:0;right:0;flex-direction:column;align-items:stretch;gap:4px;
+    background:rgba(9,9,11,.97);border-bottom:1px solid var(--border);padding:10px 16px 14px;display:none;
+    backdrop-filter:blur(14px)}
+  .nav-open .main-nav{display:flex}
+  .main-nav a{padding:11px 12px;font-size:14px}
+}
+@media (max-width:620px){
+  .hero{padding:44px 0 40px}
+  .hero-stats{grid-template-columns:1fr}
+  .hero-stats > div{border-right:0;border-bottom:1px solid var(--border-soft)}
+  .hero-stats > div:last-child{border-bottom:0}
+  .feat-grid{grid-template-columns:1fr}
+  .tile-row{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tile{padding:11px 12px}
+  .tile-v{font-size:17px}
+  .checklist{grid-template-columns:1fr}
+  .dodont{grid-template-columns:1fr}
+  .cand{flex-wrap:wrap}
+  .cand-meta{align-items:flex-start;flex-direction:row;flex-wrap:wrap}
+  .view{padding:26px 0 52px}
+  .card{padding:18px}
+  .aw-stats{grid-template-columns:1fr 1fr}
+  .qr-breakdown{grid-template-columns:1fr}
+  .quiz-result .qr-score{font-size:38px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" href="#/home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="url(#bg1)" stroke-width="1.7">
+        <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#10b981"/>
+        </linearGradient></defs>
+        <path d="M12 3l7 3v5.2c0 4.4-2.9 7.9-7 9.8-4.1-1.9-7-5.4-7-9.8V6l7-3z"/>
+        <path d="M9 12l2.2 2.2L15.5 9.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      BruteGuard
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="#/home" data-nav="home">Home</a>
+      <a href="#/analyzer" data-nav="analyzer">Analyzer</a>
+      <a href="#/forge" data-nav="forge">Forge</a>
+      <a href="#/vault" data-nav="vault">🔒 Vault</a>
+      <a href="#/awareness" data-nav="awareness">📚 Awareness</a>
+      <a href="#/contact" data-nav="contact">Contact Us</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" type="button" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="app">
+
+<!-- HOME -->
+<section class="view" id="view-home">
+  <div class="shell">
+    <div class="hero">
+      <div class="hero-grid">
+        <div>
+          <span class="hero-badge"><span class="dot"></span> 100% offline · zero telemetry</span>
+          <h1>How long would it take a hacker to <span class="grad">crack your password?</span></h1>
+          <p class="hero-sub">BruteGuard is a brute-force password lab that runs entirely in your browser — entropy math, pattern penalties, four real-world attack clocks, a forge for unbreakable replacements, and an encrypted vault for your logins.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#/analyzer">▶ Run the analyzer</a>
+            <a class="btn btn-ghost" href="#/awareness">📚 Learn how to stay safe</a>
+          </div>
+          <div class="hero-chips">
+            <span class="chip">✓ no signup</span>
+            <span class="chip">✓ works offline</span>
+            <span class="chip">✓ single file</span>
+          </div>
+        </div>
+        <div class="term" aria-hidden="true">
+          <div class="term-bar"><i></i><i></i><i></i><span>attacker@rig: ~</span></div>
+          <div class="term-body">
+            <div class="term-line t-dim">$ hashcat -m 0 leaks.txt rockyou.txt</div>
+            <div class="term-line t-dim">[gpu] 143.2 GH/s — rig online</div>
+            <div class="term-line t-red">[✗] "prathmesh123" → CRACKED · 0.2s</div>
+            <div class="term-line t-amber">[✗] "Rahul@2024" → CRACKED · 4 min</div>
+            <div class="term-line t-em">[✓] "Xk9$mVq2#Lp7" → holding · 10^14 years <span class="cursor"></span></div>
+          </div>
+        </div>
+      </div>
+      <dl class="hero-stats">
+        <div><dt>81%</dt><dd>of breaches used stolen or weak passwords</dd></div>
+        <div><dt>every 39s</dt><dd>a hacker attack happens somewhere</dd></div>
+        <div><dt>$4.88M</dt><dd>average cost of a data breach</dd></div>
+      </dl>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <p class="kicker">// the toolbox</p>
+        <h2>Five tools. One file. No server.</h2>
+      </div>
+      <div class="feat-grid">
+        <a class="feat" href="#/analyzer"><span class="feat-ic">🔍</span><h3>Live Analyzer</h3><p>Entropy, pattern penalties, and four attack clocks — updated on every keystroke.</p><span class="feat-go">open →</span></a>
+        <a class="feat" href="#/forge"><span class="feat-ic">⚡</span><h3>Password Forge</h3><p>Turn your name into strong passwords, or roll cryptographically random strings.</p><span class="feat-go">open →</span></a>
+        <a class="feat" href="#/vault"><span class="feat-ic">🗄️</span><h3>Encrypted Vault</h3><p>Store Amazon, Gmail, GitHub logins behind one master password.</p><span class="feat-go">open →</span></a>
+        <a class="feat" href="#/awareness"><span class="feat-ic">📚</span><h3>Awareness Hub</h3><p>Learn how hackers work, spot phishing, understand 2FA — and take the quiz.</p><span class="feat-go">open →</span></a>
+        <a class="feat" href="#/contact"><span class="feat-ic">✉️</span><h3>Contact Us</h3><p>Questions, feedback or bug reports — drop us a message.</p><span class="feat-go">open →</span></a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="cta-band">
+        <h2>Ready to see your number?</h2>
+        <p>Sixty seconds from "probably fine" to knowing exactly how long your password survives a GPU rig.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#/analyzer">Test a password now</a>
+          <a class="btn btn-ghost" href="#/awareness">Browse the Awareness Hub</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYZER -->
+<section class="view" id="view-analyzer">
+  <div class="shell">
+    <header class="page-head">
+      <p class="kicker">// live analyzer</p>
+      <h2>Type a password. Watch it get picked apart.</h2>
+      <p class="page-sub">Entropy, pattern penalties and four real-world attack clocks — computed entirely in this tab, on every keystroke.</p>
+    </header>
+    <div class="grid-2">
+      <div class="stack">
+        <div class="card hairline">
+          <label class="field-label" for="anaInput">Password to test</label>
+          <div class="input-row">
+            <input id="anaInput" class="input mono" type="password" placeholder="type or paste…" autocomplete="off" spellcheck="false">
+            <button id="anaToggle" class="icon-btn" type="button" aria-label="Show password">👁</button>
+            <button id="anaCopy" class="icon-btn" type="button" aria-label="Copy">⧉</button>
+          </div>
+          <label class="field-label" for="anaCtx">Optional — your name <span class="muted">(personal-context check)</span></label>
+          <input id="anaCtx" class="input" type="text" placeholder="e.g. prathmesh" autocomplete="off" spellcheck="false">
+          <div class="meter-wrap">
+            <div class="meter" id="anaMeter"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="verdict-row">
+              <span class="verdict-label" id="anaScoreLabel">Awaiting input…</span>
+              <span class="verdict-bits mono" id="anaBits"></span>
+            </div>
+          </div>
+          <div class="chips" id="anaChips"></div>
+          <ul class="checklist" id="anaChecklist"></ul>
+          <div class="warnings" id="anaWarnings"></div>
+          <div class="suggestions" id="anaSuggestions"></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="tile-row">
+          <div class="tile"><span class="tile-v mono" id="statBits">—</span><span class="tile-l">eff. entropy</span></div>
+          <div class="tile"><span class="tile-v mono" id="statLen">—</span><span class="tile-l">characters</span></div>
+          <div class="tile"><span class="tile-v mono" id="statPool">—</span><span class="tile-l">charset pool</span></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Time to crack <span class="muted">— four attack scenarios</span></h3>
+          <div class="crack-table" id="crackTable"><p class="empty">Type a password to arm the clocks.</p></div>
+        </div>
+        <div id="breachBanner" hidden></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FORGE -->
+<section class="view" id="view-forge">
+  <div class="shell">
+    <header class="page-head">
+      <p class="kicker">// password forge</p>
+      <h2>Mint passwords that survive the rig.</h2>
+      <p class="page-sub">Every candidate is re-analyzed by the engine and kept only if it scores Strong or better.</p>
+    </header>
+    <div class="card hairline" style="max-width:820px;margin:0 auto;width:100%">
+      <div class="tabs" id="forgeTabs">
+        <button class="tab active" data-forgemode="name">From my name</button>
+        <button class="tab" data-forgemode="random">Pure random</button>
+      </div>
+      <div id="forgePanelName">
+        <label class="field-label" for="forgeName">Your name or word</label>
+        <input id="forgeName" class="input" type="text" placeholder="e.g. prathmesh" value="prathmesh" autocomplete="off">
+        <div class="opt-row">
+          <label class="field-label" style="margin:0" for="forgeIntensity">Leet intensity</label>
+          <select id="forgeIntensity" class="input" style="width:auto;padding:9px 12px">
+            <option value="light">Light</option>
+            <option value="medium" selected>Medium</option>
+            <option value="heavy">Heavy</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="forgeGoName" style="margin-top:18px">⚡ Forge 5 candidates</button>
+      </div>
+      <div id="forgePanelRandom" hidden>
+        <label class="field-label" for="randLen">Length</label>
+        <div class="slider-row">
+          <input type="range" id="randLen" min="10" max="40" value="18">
+          <span class="slider-val" id="randLenVal">18</span>
+        </div>
+        <div class="opt-row">
+          <label class="opt"><input type="checkbox" id="randLower" checked> a-z</label>
+          <label class="opt"><input type="checkbox" id="randUpper" checked> A-Z</label>
+          <label class="opt"><input type="checkbox" id="randDigit" checked> 0-9</label>
+          <label class="opt"><input type="checkbox" id="randSymbol" checked> !@#$</label>
+        </div>
+        <button class="btn btn-primary" id="forgeGoRandom" style="margin-top:18px">⚡ Forge 5 candidates</button>
+      </div>
+      <hr class="divider">
+      <div id="forgeOut"><p class="empty">Candidates appear here — each one verified by the engine before display.</p></div>
+      <div class="action-row" id="forgeActions" hidden>
+        <button class="btn btn-ghost btn-sm" id="forgeCopyAll">Copy all 5</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VAULT -->
+<section class="view" id="view-vault">
+  <div class="shell">
+    <header class="page-head">
+      <p class="kicker">// encrypted vault</p>
+      <h2>🔒 Your passwords, in one place.</h2>
+      <p class="page-sub">Store Amazon, Gmail, GitHub logins behind one master password. Everything is encrypted in your browser — nothing is ever uploaded.</p>
+    </header>
+
+    <div class="vault-box">
+      <div class="card hairline" id="vault-create-card" hidden>
+        <h3 class="card-title">Create your vault</h3>
+        <p class="card-sub">Pick a master password. You'll need it every time you open the vault. There is no "forgot password" — if you lose it, the data is gone forever.</p>
+        <label class="field-label" for="vaultNewPass">Master password</label>
+        <input id="vaultNewPass" class="input mono" type="password" placeholder="At least 4 characters" autocomplete="new-password">
+        <label class="field-label" for="vaultNewPass2">Confirm master password</label>
+        <input id="vaultNewPass2" class="input mono" type="password" placeholder="Repeat it" autocomplete="new-password">
+        <button class="btn btn-primary" id="vaultCreateBtn" style="margin-top:16px">🔒 Create Vault</button>
+        <div class="empty" id="vaultCreateMsg"></div>
+      </div>
+
+      <div class="card hairline" id="vault-unlock-card" hidden>
+        <h3 class="card-title">Unlock your vault</h3>
+        <p class="card-sub">Enter your master password to decrypt your saved logins.</p>
+        <label class="field-label" for="vaultPass">Master password</label>
+        <input id="vaultPass" class="input mono" type="password" placeholder="Enter master password" autocomplete="current-password">
+        <button class="btn btn-primary" id="vaultUnlockBtn" style="margin-top:16px">🔓 Unlock Vault</button>
+        <button class="btn btn-danger-ghost" id="vaultDeleteBtn" style="margin-top:10px">Delete vault permanently</button>
+        <div class="empty" id="vaultUnlockMsg"></div>
+      </div>
+
+      <div id="vault-open-view" hidden>
+        <div class="card hairline">
+          <div class="action-row" style="justify-content:space-between;margin-top:0">
+            <h3 class="card-title" style="margin:0">🔓 Vault unlocked</h3>
+            <button class="btn btn-ghost btn-sm" id="vaultLockBtn">Lock</button>
+          </div>
+          <div class="grid-2" style="margin-top:16px">
+            <div>
+              <label class="field-label" for="entrySite">Site / app</label>
+              <input id="entrySite" class="input" type="text" placeholder="Amazon" autocomplete="off">
+            </div>
+            <div>
+              <label class="field-label" for="entryUser">Username / email</label>
+              <input id="entryUser" class="input" type="text" placeholder="prathmesh@mail.com" autocomplete="off">
+            </div>
+          </div>
+          <label class="field-label" for="entryPass">Password</label>
+          <div class="input-row">
+            <input id="entryPass" class="input mono" type="text" placeholder="password" autocomplete="off">
+            <button class="icon-btn" id="entryGenBtn" type="button" title="Generate a strong one">⚡</button>
+          </div>
+          <button class="btn btn-primary" id="entryAddBtn" style="margin-top:16px">+ Save Entry</button>
+          <div class="empty" id="vaultEntryMsg"></div>
+        </div>
+
+        <div class="card hairline">
+          <h3 class="card-title">Saved accounts (<span id="entryCount">0</span>)</h3>
+          <div id="entryList"><p class="empty">No saved accounts yet. Add your first one above ☝️</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AWARENESS -->
+<section class="view" id="view-awareness">
+  <div class="shell">
+    <header class="page-head">
+      <p class="kicker">// awareness hub</p>
+      <h2>📚 Stay safe online — everything you need to know</h2>
+      <p class="page-sub">Simple, jargon-free lessons about how hackers really work and how to stop them. No prior tech knowledge needed.</p>
+    </header>
+
+    <div class="aw-intro">
+      <h3>Why this matters</h3>
+      <p>Most people think hacking looks like a movie — a hooded figure typing furiously. In reality, <b>81% of breaches start with a weak or stolen password</b>. Hackers don't break in — they <b>log in</b> with credentials they bought, guessed, or tricked you into giving them. The good news: <b>a few simple habits block almost all of them.</b></p>
+    </div>
+
+    <div class="aw-toc">
+      <span class="aw-toc-label">Jump to</span>
+      <a href="#aw-1">How hackers attack</a>
+      <a href="#aw-2">Password do's &amp; don'ts</a>
+      <a href="#aw-3">Two-Factor Authentication</a>
+      <a href="#aw-4">Spot phishing</a>
+      <a href="#aw-5">If you get hacked</a>
+      <a href="#aw-6">By the numbers</a>
+      <a href="#aw-7">🎯 Take the quiz</a>
+    </div>
+
+    <!-- 1 -->
+    <div class="aw-section" id="aw-1">
+      <div class="aw-section-head">
+        <div class="aw-num">01</div>
+        <div>
+          <h3>How hackers actually attack</h3>
+          <p>Six common methods — and how each one is stopped</p>
+        </div>
+      </div>
+      <div class="attack-grid">
+        <div class="attack-card">
+          <div class="ac-head"><span class="ac-ic">🔨</span><span class="ac-title">Brute Force</span></div>
+          <div class="ac-desc">A computer tries every possible combination of characters until it finds yours. Simple passwords fall in seconds.</div>
+          <div class="ac-example">GPU rig tries <b>10,000,000,000 guesses/sec</b></div>
+          <div class="ac-defend"><b>Defence:</b> Use 12+ characters. Every extra character multiplies the time by ~100×.</div>
+        </div>
+        <div class="attack-card">
+          <div class="ac-head"><span class="ac-ic">📖</span><span class="ac-title">Dictionary Attack</span></div>
+          <div class="ac-desc">Instead of random guessing, the attacker tries common words, names, and known passwords from leak lists — millions per second.</div>
+          <div class="ac-example">Tries <b>"password", "dragon", "prathmesh123"</b> first</div>
+          <div class="ac-defend"><b>Defence:</b> Never use a single dictionary word. Combine 3–4 random words instead.</div>
+        </div>
+        <div class="attack-card">
+          <div class="ac-head"><span class="ac-ic">🎣</span><span class="ac-title">Phishing</span></div>
+          <div class="ac-desc">A fake email, SMS, or website tricks you into typing your password on a page that looks real but isn't.</div>
+          <div class="ac-example">"Your <b>Amazon account is locked</b> — click here to verify"</div>
+          <div class="ac-defend"><b>Defence:</b> Never click links in emails. Open the app or type the site address yourself.</div>
+        </div>
+        <div class="attack-card">
+          <div class="ac-head"><span class="ac-ic">🔄</span><span class="ac-title">Credential Stuffing</span></div>
+          <div class="ac-desc">If one site you use gets breached, attackers try that same email + password combo on every other site — Gmail, bank, Amazon, everything.</div>
+          <div class="ac-example">One leak = <b>100 accounts compromised</b></div>
+          <div class="ac-defend"><b>Defence:</b> Use a <b>different password for every single site</b>. A password manager makes this painless.</div>
+        </div>
+        <div class="attack-card">
+          <div class="ac-head"><span class="ac-ic">🎭</span><span class="ac-title">Social Engineering</span></div>
+          <div class="ac-desc">A human tricks you into revealing a password — pretending to be IT support, a bank agent, or a friend in trouble.</div>
+          <div class="ac-example">"Hi, I'm from your bank — <b>please confirm your OTP</b>"</div>
+          <div class="ac-defend"><b>Defence:</b> Legitimate companies <b>never</b> ask for your password or OTP. Hang up and call back on the official number.</div>
+        </div>
+        <div class="attack-card">
+          <div class="ac-head"><span class="ac-ic">🕵️</span><span class="ac-title">Shoulder Surfing / Spyware</span></div>
+          <div class="ac-desc">Someone watches you type, or malware on your device records your keystrokes and screenshots. Public Wi-Fi and cracked apps are common sources.</div>
+          <div class="ac-example">Keylogger records <b>every keystroke</b> silently</div>
+          <div class="ac-defend"><b>Defence:</b> Install apps only from official stores. Use a screen privacy filter in public. Keep your OS updated.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="aw-section" id="aw-2">
+      <div class="aw-section-head">
+        <div class="aw-num">02</div>
+        <div>
+          <h3>Password do's &amp; don'ts</h3>
+          <p>The 10 rules that matter most</p>
+        </div>
+      </div>
+      <div class="dodont">
+        <div class="dd-col do">
+          <h4>✅ DO this</h4>
+          <ul class="dd-list">
+            <li><span class="mk">✓</span><span>Use <b>12+ characters</b> — length beats complexity.</span></li>
+            <li><span class="mk">✓</span><span>Use a <b>different password</b> on every site.</span></li>
+            <li><span class="mk">✓</span><span>Use a <b>password manager</b> (Bitwarden, 1Password, KeePass).</span></li>
+            <li><span class="mk">✓</span><span>Turn on <b>2FA</b> everywhere it's offered.</span></li>
+            <li><span class="mk">✓</span><span>Use a <b>passphrase</b> like <span class="mono">blue-cactus-river-91!</span></span></li>
+            <li><span class="mk">✓</span><span>Change passwords <b>immediately</b> after a breach alert.</span></li>
+            <li><span class="mk">✓</span><span>Check your email on <b>haveibeenpwned.com</b> occasionally.</span></li>
+            <li><span class="mk">✓</span><span>Keep your <b>recovery email</b> up to date.</span></li>
+          </ul>
+        </div>
+        <div class="dd-col dont">
+          <h4>❌ DON'T do this</h4>
+          <ul class="dd-list">
+            <li><span class="mk">✗</span><span>Don't use <b>names, birthdays, or cities</b>.</span></li>
+            <li><span class="mk">✗</span><span>Don't reuse the <b>same password</b> on multiple sites.</span></li>
+            <li><span class="mk">✗</span><span>Don't use <b>"password123", "qwerty", "admin"</b> — ever.</span></li>
+            <li><span class="mk">✗</span><span>Don't share passwords over <b>WhatsApp, email, or SMS</b>.</span></li>
+            <li><span class="mk">✗</span><span>Don't write passwords in a <b>notepad or sticky note</b>.</span></li>
+            <li><span class="mk">✗</span><span>Don't click <b>"remember me"</b> on shared computers.</span></li>
+            <li><span class="mk">✗</span><span>Don't ignore <b>breach notifications</b> from Google or Apple.</span></li>
+            <li><span class="mk">✗</span><span>Don't type passwords on <b>public Wi-Fi</b> without HTTPS.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="aw-section" id="aw-3">
+      <div class="aw-section-head">
+        <div class="aw-num">03</div>
+        <div>
+          <h3>Two-Factor Authentication (2FA)</h3>
+          <p>Your single best upgrade — 99% of automated attacks blocked</p>
+        </div>
+      </div>
+      <div class="card">
+        <p class="card-sub" style="font-size:13.5px;line-height:1.7;color:var(--muted)">
+          <b style="color:var(--text)">What it is:</b> A second proof of identity on top of your password.
+          Even if a hacker steals your password, they can't log in without the second factor — which only you have.
+        </p>
+        <div class="fa2-steps" style="margin-top:16px">
+          <div class="fa2-step">
+            <div class="fa2-n">1</div>
+            <div>
+              <div class="fa2-t">You enter your password</div>
+              <div class="fa2-d">Something you <b>know</b> — your password or PIN.</div>
+            </div>
+          </div>
+          <div class="fa2-step">
+            <div class="fa2-n">2</div>
+            <div>
+              <div class="fa2-t">The site asks for a second factor</div>
+              <div class="fa2-d">Something you <b>have</b> (phone, security key) or something you <b>are</b> (fingerprint, face).</div>
+            </div>
+          </div>
+          <div class="fa2-step">
+            <div class="fa2-n">3</div>
+            <div>
+              <div class="fa2-t">You approve the login</div>
+              <div class="fa2-d">The hacker can't — they don't have your phone or fingerprint.</div>
+            </div>
+          </div>
+        </div>
+        <h4 style="font-size:13px;margin-top:22px;margin-bottom:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em">Types of 2FA — best to worst</h4>
+        <div class="fa2-methods">
+          <div class="fa2-method best">
+            <div class="fm-ic">🔑</div>
+            <div class="fm-t">Hardware key / Passkey</div>
+            <div class="fm-d">Most secure. A physical USB key or biometric passkey. Nearly impossible to phish.</div>
+          </div>
+          <div class="fa2-method">
+            <div class="fm-ic">📱</div>
+            <div class="fm-t">Authenticator app</div>
+            <div class="fm-d">Google Authenticator, Authy, Microsoft Authenticator. Works offline. Very secure.</div>
+          </div>
+          <div class="fa2-method">
+            <div class="fm-ic">💬</div>
+            <div class="fm-t">SMS / Email OTP</div>
+            <div class="fm-d">Better than nothing, but can be intercepted via SIM-swap. Use only if nothing else exists.</div>
+          </div>
+        </div>
+        <div style="margin-top:18px;padding:14px 16px;background:rgba(16,185,129,.08);border:1px solid var(--em-border);border-radius:var(--r-md);font-size:13px;color:#a7f3c4;line-height:1.6">
+          💡 <b>Turn on 2FA today for:</b> Gmail, bank apps, UPI (Google Pay/PhonePe/Paytm), Instagram, WhatsApp, Amazon, Facebook, and any account that has your money or identity.
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="aw-section" id="aw-4">
+      <div class="aw-section-head">
+        <div class="aw-num">04</div>
+        <div>
+          <h3>How to spot a phishing attack</h3>
+          <p>Eight warning signs — if you see two or more, it's a scam</p>
+        </div>
+      </div>
+      <div class="phish-grid">
+        <div class="phish-sign">
+          <span class="ps-ic">⚠️</span>
+          <div>
+            <div class="ps-t">Urgency or threats</div>
+            <div class="ps-d">"Your account will be <b>closed in 24 hours</b>" — real companies don't do this.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">📧</span>
+          <div>
+            <div class="ps-t">Wrong sender address</div>
+            <div class="ps-d">"support@amaz0n-help.xyz" instead of "@amazon.com". Always check the domain carefully.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">🔗</span>
+          <div>
+            <div class="ps-t">Suspicious link</div>
+            <div class="ps-d">Hover before clicking. If the domain isn't the official one, don't click.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">📝</span>
+          <div>
+            <div class="ps-t">Spelling &amp; grammar mistakes</div>
+            <div class="ps-d">"Dear Valued Custmer, your acount has been susspended." Real brands proofread.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">🙋</span>
+          <div>
+            <div class="ps-t">Asks for personal info</div>
+            <div class="ps-d">Legitimate companies never ask for your password, OTP, or CVV by email.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">💰</span>
+          <div>
+            <div class="ps-t">Too-good-to-be-true offers</div>
+            <div class="ps-d">"You've won ₹50,000! Claim now." If it's unexpected, it's fake.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">📎</span>
+          <div>
+            <div class="ps-t">Unexpected attachments</div>
+            <div class="ps-d">.zip, .exe, .docm files from unknown senders often carry malware.</div>
+          </div>
+        </div>
+        <div class="phish-sign">
+          <span class="ps-ic">📞</span>
+          <div>
+            <div class="ps-t">Unusual contact method</div>
+            <div class="ps-d">Your bank doesn't WhatsApp you asking for details. Neither does the tax office.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h4 style="font-size:14px;margin-bottom:8px;color:var(--em-bright)">🛡️ The 3-step phishing defence</h4>
+        <ol style="margin:0;padding-left:20px;font-size:13px;color:var(--muted);line-height:1.9">
+          <li><b style="color:var(--text)">Stop.</b> Don't click, don't reply, don't call the number in the message.</li>
+          <li><b style="color:var(--text)">Verify.</b> Open the official app or type the website address manually to check your account.</li>
+          <li><b style="color:var(--text)">Report.</b> Forward the email to <span class="mono">reportphishing@apwg.org</span> or use the "report spam" button.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="aw-section" id="aw-5">
+      <div class="aw-section-head">
+        <div class="aw-num">05</div>
+        <div>
+          <h3>What to do if you've been hacked</h3>
+          <p>Act fast — the first 24 hours matter most</p>
+        </div>
+      </div>
+      <div class="emg-steps">
+        <div class="emg-step">
+          <span class="es-n">1</span>
+          <div>
+            <div class="es-t">Change your password immediately</div>
+            <div class="es-d">Start with your <b>email</b> account — that's the master key to everything else. Then change the password on the compromised site.</div>
+          </div>
+        </div>
+        <div class="emg-step">
+          <span class="es-n">2</span>
+          <div>
+            <div class="es-t">Change it everywhere you reused it</div>
+            <div class="es-d">If you used the same password on other sites, change them all now. <b>This is why unique passwords matter.</b></div>
+          </div>
+        </div>
+        <div class="emg-step">
+          <span class="es-n">3</span>
+          <div>
+            <div class="es-t">Turn on 2FA if you haven't</div>
+            <div class="es-d">Even if the attacker has your new password, 2FA will lock them out. Do it on email, banking, and social media first.</div>
+          </div>
+        </div>
+        <div class="emg-step">
+          <span class="es-n">4</span>
+          <div>
+            <div class="es-t">Check for unauthorised activity</div>
+            <div class="es-d">Look at your bank statements, sent emails, and account login history. Report anything suspicious to the service.</div>
+          </div>
+        </div>
+        <div class="emg-step">
+          <span class="es-n">5</span>
+          <div>
+            <div class="es-t">Scan your devices for malware</div>
+            <div class="es-d">Run a full antivirus scan. A keylogger may still be sitting on your computer or phone recording everything.</div>
+          </div>
+        </div>
+        <div class="emg-step">
+          <span class="es-n">6</span>
+          <div>
+            <div class="es-t">Tell your contacts</div>
+            <div class="es-d">If your email or WhatsApp was hacked, warn friends — they may receive scam messages pretending to be you.</div>
+          </div>
+        </div>
+        <div class="emg-step">
+          <span class="es-n">7</span>
+          <div>
+            <div class="es-t">Report it</div>
+            <div class="es-d">In India: <b>cybercrime.gov.in</b> or call <b>1930</b> (national cybercrime helpline). Also notify your bank if money is involved.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="aw-section" id="aw-6">
+      <div class="aw-section-head">
+        <div class="aw-num">06</div>
+        <div>
+          <h3>By the numbers</h3>
+          <p>Why this matters in 2024–2025</p>
+        </div>
+      </div>
+      <div class="aw-stats">
+        <div class="aw-stat">
+          <div class="as-v">81%</div>
+          <div class="as-l">of breaches involve weak or stolen passwords</div>
+        </div>
+        <div class="aw-stat">
+          <div class="as-v">24B+</div>
+          <div class="as-l">credentials leaked in breaches (Have I Been Pwned)</div>
+        </div>
+        <div class="aw-stat">
+          <div class="as-v">$4.88M</div>
+          <div class="as-l">average global cost of a data breach (IBM 2024)</div>
+        </div>
+        <div class="aw-stat">
+          <div class="as-v">39 sec</div>
+          <div class="as-l">a hacker attack happens somewhere (Univ. of Maryland)</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;border-color:var(--em-border);background:linear-gradient(180deg,rgba(16,185,129,.06),transparent)">
+        <h4 style="font-size:14px;margin-bottom:8px;color:var(--em-bright)">🎯 Three habits that stop most attacks</h4>
+        <ol style="margin:0;padding-left:20px;font-size:13.5px;color:var(--muted);line-height:2">
+          <li><b style="color:var(--text)">Long unique passwords</b> on every account (12+ chars, no reuse).</li>
+          <li><b style="color:var(--text)">2FA enabled</b> on email, banking, and social media.</li>
+          <li><b style="color:var(--text)">Never click</b> links in unexpected emails or messages — type the address yourself.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- 7 — QUIZ -->
+    <div class="aw-section" id="aw-7">
+      <div class="aw-section-head">
+        <div class="aw-num">07</div>
+        <div>
+          <h3>🎯 Test your awareness</h3>
+          <p>8 questions · instant feedback · no signup needed</p>
+        </div>
+      </div>
+
+      <div class="quiz-shell">
+        <div class="card hairline" id="quizStartCard">
+          <div class="quiz-start">
+            <div class="qs-ic">🧠</div>
+            <h3>Awareness Quiz</h3>
+            <p>Answer 8 quick multiple-choice questions based on what you just learned. You'll get instant feedback and an explanation for every answer — no scoring judgement, just learning.</p>
+            <button class="btn btn-primary" id="quizStartBtn" style="padding:13px 28px;font-size:15px">▶ Start Quiz</button>
+          </div>
+        </div>
+
+        <div class="card hairline" id="quizQuestionCard" hidden>
+          <div class="quiz-progress"><i id="quizBar"></i></div>
+          <div class="quiz-meta">
+            <span class="qm-r" id="quizCounter">Question 1 of 8</span>
+            <span class="qm-s" id="quizScoreLive">Score: 0</span>
+          </div>
+          <div class="quiz-q" id="quizQuestionText">…</div>
+          <div class="quiz-opts" id="quizOptions"></div>
+          <div id="quizFeedback"></div>
+          <div class="quiz-actions" id="quizActions"></div>
+        </div>
+
+        <div class="card hairline" id="quizResultCard" hidden>
+          <div class="quiz-result">
+            <div class="qr-score" id="quizFinalScore">0 / 8</div>
+            <div class="qr-sub" id="quizFinalPct">0% correct</div>
+            <div class="qr-grade" id="quizGrade">—</div>
+            <div class="qr-msg" id="quizGradeMsg"></div>
+            <div class="qr-breakdown">
+              <div class="qr-bd-item"><div class="qb-v" id="qbCorrect">0</div><div class="qb-l">correct</div></div>
+              <div class="qr-bd-item bad"><div class="qb-v" id="qbWrong">0</div><div class="qb-l">missed</div></div>
+              <div class="qr-bd-item"><div class="qb-v" id="qbTotal">8</div><div class="qb-l">total</div></div>
+            </div>
+            <button class="btn btn-primary" id="quizRetryBtn" style="padding:12px 26px">↻ Try again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-band" style="margin-top:24px">
+      <h2>Ready to check your own password?</h2>
+      <p>Run it through the analyzer and see if it holds up — then forge a stronger one.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#/analyzer">▶ Analyze a password</a>
+        <a class="btn btn-ghost" href="#/forge">⚡ Forge a strong one</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="view" id="view-contact">
+  <div class="shell">
+    <header class="page-head">
+      <p class="kicker">// get in touch</p>
+      <h2>Contact Us</h2>
+      <p class="page-sub">Questions, feedback, bug reports or collaboration ideas — send us a message and we'll get back to you.</p>
+    </header>
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="contact-item">
+          <span class="ci-ic">✉️</span>
+          <div>
+            <div class="ci-t">Email</div>
+            <div class="ci-v"><a href="mailto:team@bruteguard.app">team@bruteguard.app</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="ci-ic">📞</span>
+          <div>
+            <div class="ci-t">Phone</div>
+            <div class="ci-v">+91 98765 43210</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="ci-ic">📍</span>
+          <div>
+            <div class="ci-t">Location</div>
+            <div class="ci-v">Pune, Maharashtra, India</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="ci-ic">🕒</span>
+          <div>
+            <div class="ci-t">Support hours</div>
+            <div class="ci-v">Mon–Fri · 10:00 – 18:00 IST</div>
+          </div>
+        </div>
+      </div>
+      <div class="card hairline">
+        <h3 class="card-title">Send a message</h3>
+        <p class="card-sub">Fill in the form below and we'll get back to you.</p>
+        <label class="field-label" for="cName">Your name</label>
+        <input id="cName" class="input" type="text" placeholder="Prathmesh" autocomplete="name">
+        <label class="field-label" for="cEmail">Email address</label>
+        <input id="cEmail" class="input" type="text" placeholder="you@example.com" autocomplete="email">
+        <label class="field-label" for="cSubject">Subject</label>
+        <input id="cSubject" class="input" type="text" placeholder="Feedback / Bug report / Question">
+        <label class="field-label" for="cMessage">Message</label>
+        <textarea id="cMessage" class="input" rows="5" placeholder="Type your message here…"></textarea>
+        <button class="btn btn-primary" id="contactSendBtn" style="margin-top:18px;width:100%">✉️ Send Message</button>
+        <div class="form-msg" id="contactMsg"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-inner">
+    <p>© 2025 <b>BruteGuard</b></p>
+  </div>
+</footer>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   BruteGuard — simple JavaScript
+   ═══════════════════════════════════════════════════════════ */
+
+function $(sel, root){ return (root || document).querySelector(sel); }
+function $$(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+  });
+}
+function toast(msg, kind){
+  var box = $("#toasts");
+  var t = document.createElement("div");
+  t.className = "toast" + (kind === "err" ? " err" : "");
+  t.textContent = msg;
+  box.appendChild(t);
+  setTimeout(function(){ t.classList.add("out"); }, 2200);
+  setTimeout(function(){ t.remove(); }, 2600);
+}
+function copyText(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast("Copied to clipboard"); });
+  } else {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast("Copied"); } catch(e){ toast("Copy failed", "err"); }
+    ta.remove();
+  }
+}
+
+/* ═══════════════ 1. NAVIGATION ═══════════════ */
+var VIEWS = ["home","analyzer","forge","vault","awareness","contact"];
+
+function route(){
+  var hash = location.hash.replace(/^#\/?/, "") || "home";
+
+  if (hash.indexOf("aw-") === 0){
+    var el = document.getElementById(hash);
+    if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+    return;
+  }
+
+  var view = VIEWS.indexOf(hash) !== -1 ? hash : "home";
+  VIEWS.forEach(function(v){
+    var el = $("#view-" + v);
+    if (el) el.classList.toggle("active", v === view);
+  });
+  $$(".main-nav a").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-nav") === view);
+  });
+  document.body.classList.remove("nav-open");
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+
+$("#navToggle").addEventListener("click", function(){
+  document.body.classList.toggle("nav-open");
+});
+
+/* ═══════════════ 2. PASSWORD ANALYSIS ENGINE ═══════════════ */
+
+var COMMON = {
+  "123456":1,"password":1,"12345678":1,"qwerty":1,"123456789":1,"12345":1,"1234":1,"111111":1,
+  "1234567":1,"dragon":1,"123123":1,"baseball":1,"abc123":1,"football":1,"monkey":1,"letmein":1,
+  "shadow":1,"master":1,"666666":1,"qwertyuiop":1,"123321":1,"mustang":1,"admin":1,"welcome":1,
+  "login":1,"iloveyou":1,"sunshine":1,"princess":1,"password1":1,"password123":1,"p@ssw0rd":1,
+  "admin123":1,"root":1,"test123":1,"guest":1,"india":1,"india123":1,"mahadev":1,"jaihind":1,
+  "prathmesh":1,"hello":1,"hello123":1,"qwerty123":1,"qwerty@123":1,"asdfgh":1,"zxcvbnm":1
+};
+
+var DICT_WORDS = ["password","admin","welcome","letmein","secret","master","hello","love","india",
+  "test","guest","root","dragon","monkey","football","cricket","sunshine","princess","qwerty",
+  "login","user","money","summer","winter","flower","friend","family","computer","internet",
+  "google","amazon","facebook","prathmesh","hacker","cyber","jaan","babu","biryani","samosa"];
+
+function findRepeating(pw){
+  for (var size = 1; size <= Math.floor(pw.length / 2); size++){
+    if (pw.length % size !== 0) continue;
+    var unit = pw.slice(0, size);
+    var rep = "";
+    for (var i = 0; i < pw.length / size; i++) rep += unit;
+    if (rep === pw) return unit;
+  }
+  return null;
+}
+function findSequences(pw){
+  var lower = pw.toLowerCase();
+  var rows = ["abcdefghijklmnopqrstuvwxyz","0123456789","qwertyuiop","asdfghjkl","zxcvbnm"];
+  var found = [];
+  for (var r = 0; r < rows.length; r++){
+    var row = rows[r];
+    for (var i = 0; i + 3 <= lower.length; i++){
+      var chunk = lower.slice(i, i + 3);
+      if (row.indexOf(chunk) !== -1) found.push(chunk);
+    }
+  }
+  return found;
+}
+function findRepeats(pw){
+  var m = pw.toLowerCase().match(/(.)\1{2,}/g);
+  return m || [];
+}
+function findYear(pw){
+  var m = pw.match(/(19|20)\d{2}/);
+  return m ? m[0] : null;
+}
+
+function analyzePassword(pw, ctxName){
+  var len = pw.length;
+  var hasLower  = /[a-z]/.test(pw);
+  var hasUpper  = /[A-Z]/.test(pw);
+  var hasDigit  = /[0-9]/.test(pw);
+  var hasSymbol = /[^A-Za-z0-9]/.test(pw);
+
+  var pool = 0;
+  if (hasLower)  pool += 26;
+  if (hasUpper)  pool += 26;
+  if (hasDigit)  pool += 10;
+  if (hasSymbol) pool += 33;
+  if (pool === 0) pool = 1;
+
+  var rawBits = len * Math.log(pool) / Math.LN2;
+  var bits = rawBits;
+
+  var warnings = [];
+  var lower = pw.toLowerCase();
+  var unleet = lower
+    .replace(/0/g,"o").replace(/1/g,"i").replace(/3/g,"e")
+    .replace(/4/g,"a").replace(/5/g,"s").replace(/7/g,"t")
+    .replace(/@/g,"a").replace(/\$/g,"s");
+
+  var isCommon = !!COMMON[lower] || !!COMMON[unleet];
+
+  if (isCommon){
+    bits = Math.min(bits, 8);
+    warnings.push({ kind:"Breach-list password", detail:"appears in known password dumps" });
+  }
+  if (ctxName && ctxName.length >= 3 && lower.indexOf(ctxName.toLowerCase()) !== -1){
+    bits -= 25;
+    warnings.push({ kind:"Contains your name", detail:"personal context −25 bits" });
+  }
+  var dictHit = null;
+  for (var d = 0; d < DICT_WORDS.length; d++){
+    if (DICT_WORDS[d].length >= 4 && (lower.indexOf(DICT_WORDS[d]) !== -1 || unleet.indexOf(DICT_WORDS[d]) !== -1)){
+      dictHit = DICT_WORDS[d];
+      break;
+    }
+  }
+  if (dictHit){
+    bits -= 18;
+    warnings.push({ kind:'Dictionary word "' + dictHit + '"', detail:"attackers try wordlists first −18 bits" });
+  }
+  var seqs = findSequences(pw);
+  if (seqs.length){
+    bits -= 12;
+    warnings.push({ kind:"Sequence (" + seqs[0] + ")", detail:"'abc' and '123' are guessed early −12 bits" });
+  }
+  var repBlock = findRepeating(pw);
+  if (repBlock && repBlock.length < pw.length){
+    bits = Math.min(bits, repBlock.length * Math.log(pool) / Math.LN2);
+    warnings.push({ kind:"Repeating block", detail:"the password is only as strong as one unit" });
+  }
+  var repChars = findRepeats(pw);
+  if (repChars.length){
+    bits -= 10;
+    warnings.push({ kind:"Repeated characters", detail:"'aaa' adds almost nothing −10 bits" });
+  }
+  var year = findYear(pw);
+  if (year){
+    bits -= 6;
+    warnings.push({ kind:"Looks like a year", detail:"1900–2030 is a tiny search space −6 bits" });
+  }
+  bits = Math.max(0, Math.min(bits, rawBits));
+
+  var score;
+  if (isCommon) score = 0;
+  else if (bits < 28) score = 0;
+  else if (bits < 36) score = 1;
+  else if (bits < 60) score = 2;
+  else if (bits < 90) score = 3;
+  else score = 4;
+
+  var LABELS = ["Very Weak","Weak","Fair","Strong","Very Strong"];
+  var label = isCommon ? "Breach-list Password" : LABELS[score];
+  var badgeClass = isCommon ? "bg-0" : "bg-" + score;
+
+  var scenarios = [
+    { label:"Throttled online",    rate: 100/3600, detail:"100 guesses/hour · rate-limited login" },
+    { label:"Unthrottled online",  rate: 10,       detail:"10 guesses/second · no rate limit" },
+    { label:"Slow hash (bcrypt)",  rate: 10000,    detail:"10,000 guesses/second · leaked DB" },
+    { label:"GPU rig (fast hash)", rate: 1e10,     detail:"10 billion guesses/second · leaked DB" }
+  ];
+
+  var crackTimes = scenarios.map(function(sc){
+    var avgGuesses = Math.pow(2, Math.max(bits, 1)) / 2;
+    var seconds = avgGuesses / sc.rate;
+    return { label: sc.label, detail: sc.detail, text: formatTime(seconds), cls: threatClass(seconds) };
+  });
+
+  var checklist = [
+    { ok: len >= 12,             label:"12+ characters" },
+    { ok: hasLower && hasUpper,  label:"mixed case" },
+    { ok: hasDigit,              label:"has digits" },
+    { ok: hasSymbol,             label:"has symbols" },
+    { ok: !isCommon,             label:"not on breach list" },
+    { ok: !dictHit,              label:"no dictionary words" },
+    { ok: seqs.length === 0,     label:"no sequences" },
+    { ok: repChars.length === 0, label:"no repeated runs" },
+    { ok: !year,                 label:"no year" },
+    { ok: bits >= 60,            label:"60+ effective bits" }
+  ];
+
+  var suggestions = [];
+  if (len < 12) suggestions.push("Add " + (12 - len) + " more characters — length is the cheapest entropy.");
+  if (!hasLower || !hasUpper) suggestions.push("Mix uppercase and lowercase letters.");
+  if (!hasDigit) suggestions.push("Add at least one digit inside the core.");
+  if (!hasSymbol) suggestions.push("Add a symbol (! @ # $ %) for extra entropy.");
+  if (year) suggestions.push("Drop the year — attackers try 1900–2030 first.");
+  if (dictHit) suggestions.push('Replace the word "' + dictHit + '" with an unlikely phrase.');
+  if (seqs.length) suggestions.push("Break the sequence — 'abc' and '123' cost real bits.");
+  if (repChars.length) suggestions.push("Replace repeated runs — 'aaa' is worth one character.");
+  if (score <= 1) suggestions.push("Start from a passphrase: 4 unlikely words beat 8 chaotic characters.");
+
+  return {
+    pw: pw, len: len, pool: pool,
+    rawBits: rawBits, bits: bits, score: score,
+    label: label, badgeClass: badgeClass, isCommon: isCommon,
+    warnings: warnings, checklist: checklist, suggestions: suggestions,
+    crackTimes: crackTimes,
+    gpuText: crackTimes[3].text
+  };
+}
+
+function formatTime(sec){
+  if (!isFinite(sec) || sec <= 0) return "instantly";
+  if (sec < 1) return "less than a second";
+  var MIN = 60, HOUR = 3600, DAY = 86400, YEAR = 31557600;
+  if (sec < MIN)          return Math.round(sec) + " seconds";
+  if (sec < HOUR)         return (sec/MIN).toFixed(1) + " minutes";
+  if (sec < DAY)          return (sec/HOUR).toFixed(1) + " hours";
+  if (sec < YEAR)         return (sec/DAY).toFixed(1) + " days";
+  if (sec < YEAR*1000)    return (sec/YEAR).toFixed(1) + " years";
+  if (sec < YEAR*1e6)     return (sec/(YEAR*1000)).toFixed(1) + " thousand years";
+  if (sec < YEAR*1e9)     return (sec/(YEAR*1e6)).toFixed(1) + " million years";
+  if (sec < YEAR*1e12)    return (sec/(YEAR*1e9)).toFixed(1) + " billion years";
+  return "10^" + Math.round(Math.log(sec)/Math.LN10) + " years";
+}
+function threatClass(sec){
+  if (sec < 3600) return "tv-red";
+  if (sec < 86400*30) return "tv-orange";
+  if (sec < 31557600*10) return "tv-amber";
+  if (sec < 31557600*10000) return "tv-lime";
+  return "tv-em";
+}
+
+/* Analyzer UI */
+var anaInput = $("#anaInput");
+var anaCtx   = $("#anaCtx");
+
+function runAnalyzer(){
+  var pw = anaInput.value;
+  if (!pw){
+    $("#anaMeter").className = "meter";
+    $$("#anaMeter i").forEach(function(seg){ seg.className = ""; });
+    $("#anaScoreLabel").textContent = "Awaiting input…";
+    $("#anaScoreLabel").className = "verdict-label";
+    $("#anaBits").textContent = "";
+    $("#anaChips").innerHTML = "";
+    $("#anaChecklist").innerHTML = "";
+    $("#anaWarnings").innerHTML = "";
+    $("#anaSuggestions").innerHTML = "";
+    $("#statBits").textContent = "—";
+    $("#statLen").textContent = "—";
+    $("#statPool").textContent = "—";
+    $("#crackTable").innerHTML = '<p class="empty">Type a password to arm the clocks.</p>';
+    $("#breachBanner").hidden = true;
+    return;
+  }
+
+  var res = analyzePassword(pw, anaCtx.value.trim());
+  var cls = "sc-" + res.score;
+
+  $$("#anaMeter i").forEach(function(seg, idx){
+    seg.className = idx <= res.score ? "on " + cls : "";
+  });
+
+  $("#anaScoreLabel").textContent = res.label;
+  $("#anaScoreLabel").className = "verdict-label " + cls;
+  $("#anaBits").textContent = res.bits.toFixed(1) + " bits effective · " + res.rawBits.toFixed(1) + " raw";
+  $("#statBits").textContent = res.bits.toFixed(0);
+  $("#statLen").textContent = res.len;
+  $("#statPool").textContent = res.pool;
+
+  var chips = [];
+  if (/[a-z]/.test(pw)) chips.push('<span class="chip on">a-z ×' + (pw.match(/[a-z]/g) || []).length + "</span>");
+  if (/[A-Z]/.test(pw)) chips.push('<span class="chip on">A-Z ×' + (pw.match(/[A-Z]/g) || []).length + "</span>");
+  if (/[0-9]/.test(pw)) chips.push('<span class="chip on">0-9 ×' + (pw.match(/[0-9]/g) || []).length + "</span>");
+  if (/[^A-Za-z0-9]/.test(pw)) chips.push('<span class="chip on">symbol ×' + (pw.match(/[^A-Za-z0-9]/g) || []).length + "</span>");
+  if (res.isCommon) chips.push('<span class="chip bad">breach-list hit</span>');
+  $("#anaChips").innerHTML = chips.join("");
+
+  $("#anaChecklist").innerHTML = res.checklist.map(function(c){
+    return '<li class="' + (c.ok ? "ok" : "") + '"><span class="mark">' + (c.ok ? "✓" : "✗") + "</span>" + esc(c.label) + "</li>";
+  }).join("");
+
+  $("#anaWarnings").innerHTML = res.warnings.map(function(w){
+    return '<div class="warn-line"><span><b>' + esc(w.kind) + "</b> — " + esc(w.detail) + "</span></div>";
+  }).join("");
+
+  $("#anaSuggestions").innerHTML = res.suggestions.length
+    ? '<div class="s-title">Hardening moves</div><ul>' + res.suggestions.slice(0,4).map(function(s){
+        return "<li>" + esc(s) + "</li>";
+      }).join("") + "</ul>"
+    : "";
+
+  $("#crackTable").innerHTML = res.crackTimes.map(function(ct){
+    return '<div class="crack-row">' +
+      '<span class="crack-l">' + esc(ct.label) + "</span>" +
+      '<span class="crack-t ' + ct.cls + '">' + esc(ct.text) + "</span>" +
+      '<span class="crack-d">' + esc(ct.detail) + "</span>" +
+      "</div>";
+  }).join("");
+
+  var bb = $("#breachBanner");
+  if (res.isCommon){
+    bb.className = "banner bad";
+    bb.innerHTML = "<span><b>⚠ Simulated breach hit</b> — matches the built-in corpus of dumped passwords." +
+      '<span class="b-sub">Offline check · nothing was transmitted.</span></span>';
+  } else {
+    bb.className = "banner ok";
+    bb.innerHTML = "<span><b>✓ Not in local breach corpus.</b>" +
+      '<span class="b-sub">Offline check — zero network requests by design.</span></span>';
+  }
+  bb.hidden = false;
+}
+
+anaInput.addEventListener("input", runAnalyzer);
+anaCtx.addEventListener("input", runAnalyzer);
+
+$("#anaToggle").addEventListener("click", function(){
+  anaInput.type = anaInput.type === "password" ? "text" : "password";
+  this.textContent = anaInput.type === "text" ? "🙈" : "👁";
+});
+$("#anaCopy").addEventListener("click", function(){
+  if (anaInput.value) copyText(anaInput.value);
+  else toast("Nothing to copy", "err");
+});
+
+/* ═══════════════ 3. PASSWORD FORGE ═══════════════ */
+var LEET = { a:"4", e:"3", i:"1", o:"0", s:"$", t:"7", g:"9" };
+
+function leetify(name, intensity){
+  var letters = name.toLowerCase().replace(/[^a-z]/g, "");
+  var prob = intensity === "light" ? 0.3 : intensity === "medium" ? 0.6 : 0.9;
+  var out = "";
+  for (var i = 0; i < letters.length; i++){
+    var ch = letters[i];
+    if (LEET[ch] && Math.random() < prob) out += LEET[ch];
+    else if (Math.random() < 0.3) out += ch.toUpperCase();
+    else out += ch;
+  }
+  var digitCount = intensity === "light" ? 1 : intensity === "medium" ? 2 : 3;
+  var digits = "";
+  for (var j = 0; j < digitCount; j++) digits += String(Math.floor(Math.random() * 10));
+  out += digits;
+  if (intensity !== "light") out += "!@#$%"[Math.floor(Math.random() * 5)];
+  return out;
+}
+
+function makeRandom(len, opts){
+  var sets = [];
+  if (opts.lower) sets.push("abcdefghijklmnopqrstuvwxyz");
+  if (opts.upper) sets.push("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  if (opts.digit) sets.push("0123456789");
+  if (opts.symbol) sets.push("!@#$%^&*-_=+?");
+  if (!sets.length) sets.push("abcdefghijklmnopqrstuvwxyz0123456789");
+  var all = sets.join("");
+  var out = "";
+  for (var s = 0; s < sets.length && out.length < len; s++){
+    out += sets[s].charAt(Math.floor(Math.random() * sets[s].length));
+  }
+  while (out.length < len){
+    out += all.charAt(Math.floor(Math.random() * all.length));
+  }
+  return out;
+}
+
+function renderForge(items){
+  var box = $("#forgeOut");
+  if (!items.length){
+    box.innerHTML = '<p class="empty">No candidates passed the filter. Try again.</p>';
+    $("#forgeActions").hidden = true;
+    return;
+  }
+  box.innerHTML = '<ul class="cand-list">' + items.map(function(it, idx){
+    return '<li class="cand">' +
+      '<span class="cand-rank">' + (idx + 1) + "</span>" +
+      '<span class="cand-pw">' + esc(it.pw) + "</span>" +
+      '<span class="cand-meta">' +
+        '<span class="badge ' + it.res.badgeClass + '">' + esc(it.res.label) + "</span>" +
+        '<span class="cand-bits">' + it.res.bits.toFixed(0) + " bits · GPU: " + esc(it.res.gpuText) + "</span>" +
+      "</span>" +
+      '<span class="cand-actions">' +
+        '<button class="mini-btn" data-copy="' + esc(it.pw) + '">Copy</button>' +
+        '<button class="mini-btn" data-analyze="' + esc(it.pw) + '">Analyze</button>' +
+      "</span>" +
+    "</li>";
+  }).join("") + "</ul>";
+  $("#forgeActions").hidden = false;
+
+  $$("#forgeOut [data-copy]").forEach(function(b){
+    b.addEventListener("click", function(){ copyText(b.getAttribute("data-copy")); });
+  });
+  $$("#forgeOut [data-analyze]").forEach(function(b){
+    b.addEventListener("click", function(){
+      anaInput.value = b.getAttribute("data-analyze");
+      runAnalyzer();
+      location.hash = "#/analyzer";
+      toast("Loaded into analyzer");
+    });
+  });
+}
+
+function forgeBatch(genFn){
+  var items = [], seen = {}, attempts = 0;
+  while (items.length < 5 && attempts < 200){
+    attempts++;
+    var pw = genFn();
+    if (!pw || seen[pw]) continue;
+    seen[pw] = true;
+    var res = analyzePassword(pw, "");
+    if (res.score >= 2 && !res.isCommon) items.push({ pw: pw, res: res });
+  }
+  renderForge(items);
+  if (items.length) toast(items.length + " candidates forged");
+  else toast("Could not forge strong candidates — try different options", "err");
+}
+
+$$("#forgeTabs .tab").forEach(function(tab){
+  tab.addEventListener("click", function(){
+    $$("#forgeTabs .tab").forEach(function(t){ t.classList.toggle("active", t === tab); });
+    var mode = tab.getAttribute("data-forgemode");
+    $("#forgePanelName").hidden = mode !== "name";
+    $("#forgePanelRandom").hidden = mode !== "random";
+  });
+});
+
+$("#forgeGoName").addEventListener("click", function(){
+  var name = $("#forgeName").value.trim();
+  if (name.replace(/[^a-zA-Z]/g, "").length < 2){
+    toast("Type at least 2 letters", "err");
+    return;
+  }
+  var intensity = $("#forgeIntensity").value;
+  forgeBatch(function(){ return leetify(name, intensity); });
+});
+
+$("#forgeGoRandom").addEventListener("click", function(){
+  var len = parseInt($("#randLen").value, 10);
+  var opts = {
+    lower: $("#randLower").checked,
+    upper: $("#randUpper").checked,
+    digit: $("#randDigit").checked,
+    symbol: $("#randSymbol").checked
+  };
+  forgeBatch(function(){ return makeRandom(len, opts); });
+});
+
+$("#randLen").addEventListener("input", function(){ $("#randLenVal").textContent = this.value; });
+
+$("#forgeCopyAll").addEventListener("click", function(){
+  var pws = $$("#forgeOut .cand-pw").map(function(el){ return el.textContent; });
+  if (pws.length) copyText(pws.join("\n"));
+});
+
+/* ═══════════════ 4. ENCRYPTED VAULT (XOR) ═══════════════ */
+var VAULT_KEY = "bruteguard-vault-v1";
+
+function xorEncrypt(text, key){
+  var out = "";
+  for (var i = 0; i < text.length; i++){
+    out += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return btoa(out);
+}
+function xorDecrypt(encoded, key){
+  try {
+    var text = atob(encoded);
+    var out = "";
+    for (var i = 0; i < text.length; i++){
+      out += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return out;
+  } catch(e){ return null; }
+}
+
+var vaultMaster = "";
+var vaultEntries = [];
+
+function vaultExists(){ return localStorage.getItem(VAULT_KEY) !== null; }
+
+function vaultShowLocked(){
+  if (vaultExists()){
+    $("#vault-create-card").hidden = true;
+    $("#vault-unlock-card").hidden = false;
+  } else {
+    $("#vault-create-card").hidden = false;
+    $("#vault-unlock-card").hidden = true;
+  }
+  $("#vault-open-view").hidden = true;
+}
+
+function vaultCreate(){
+  var p1 = $("#vaultNewPass").value;
+  var p2 = $("#vaultNewPass2").value;
+  var msg = $("#vaultCreateMsg");
+  if (p1.length < 4){
+    msg.textContent = "⚠ Master password must be at least 4 characters.";
+    msg.style.color = "var(--red-b)";
+    return;
+  }
+  if (p1 !== p2){
+    msg.textContent = "⚠ The two passwords do not match.";
+    msg.style.color = "var(--red-b)";
+    return;
+  }
+  vaultMaster = p1;
+  vaultEntries = [];
+  vaultSave();
+  $("#vaultNewPass").value = "";
+  $("#vaultNewPass2").value = "";
+  msg.textContent = "";
+  vaultOpenUI();
+  toast("Vault created 🔐");
+}
+
+function vaultSave(){
+  var json = JSON.stringify(vaultEntries);
+  var encrypted = xorEncrypt(json, vaultMaster);
+  localStorage.setItem(VAULT_KEY, encrypted);
+}
+
+function vaultUnlock(){
+  var pass = $("#vaultPass").value;
+  var msg = $("#vaultUnlockMsg");
+  if (!pass){
+    msg.textContent = "⚠ Enter your master password.";
+    msg.style.color = "var(--red-b)";
+    return;
+  }
+  var stored = localStorage.getItem(VAULT_KEY);
+  var decrypted = xorDecrypt(stored, pass);
+  var entries = null;
+  if (decrypted){
+    try { entries = JSON.parse(decrypted); } catch(e){ entries = null; }
+  }
+  if (!entries){
+    msg.textContent = "❌ Wrong master password.";
+    msg.style.color = "var(--red-b)";
+    return;
+  }
+  vaultMaster = pass;
+  vaultEntries = entries;
+  $("#vaultPass").value = "";
+  msg.textContent = "";
+  vaultOpenUI();
+  toast("Vault unlocked 🔓");
+}
+
+function vaultOpenUI(){
+  $("#vault-create-card").hidden = true;
+  $("#vault-unlock-card").hidden = true;
+  $("#vault-open-view").hidden = false;
+  renderVaultEntries();
+}
+
+function vaultLock(){
+  vaultMaster = "";
+  vaultEntries = [];
+  $("#vaultPass").value = "";
+  $("#vaultEntryMsg").textContent = "";
+  vaultShowLocked();
+  toast("Vault locked 🔒");
+}
+
+function renderVaultEntries(){
+  var list = $("#entryList");
+  $("#entryCount").textContent = vaultEntries.length;
+  if (!vaultEntries.length){
+    list.innerHTML = '<p class="empty">No saved accounts yet. Add your first one above ☝️</p>';
+    return;
+  }
+  list.innerHTML = vaultEntries.map(function(e, i){
+    return '<div class="vault-entry">' +
+      '<div class="vault-entry-main">' +
+        '<div class="vault-site">' + esc(e.site) + "</div>" +
+        '<div class="vault-user">' + esc(e.user || "—") + "</div>" +
+        '<div class="vault-pass" data-shown="0" data-idx="' + i + '">••••••••</div>' +
+      "</div>" +
+      '<div class="vault-actions">' +
+        '<button class="mini-btn" data-show="' + i + '">👁</button>' +
+        '<button class="mini-btn" data-copy="' + i + '">⧉</button>' +
+        '<button class="mini-btn" data-del="' + i + '">🗑</button>' +
+      "</div>" +
+    "</div>";
+  }).join("");
+
+  $$("#entryList [data-show]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var i = parseInt(btn.getAttribute("data-show"), 10);
+      var el = $('[data-idx="' + i + '"]');
+      if (el.dataset.shown === "1"){
+        el.textContent = "••••••••";
+        el.dataset.shown = "0";
+      } else {
+        el.textContent = vaultEntries[i].pass;
+        el.dataset.shown = "1";
+      }
+    });
+  });
+  $$("#entryList [data-copy]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var i = parseInt(btn.getAttribute("data-copy"), 10);
+      copyText(vaultEntries[i].pass);
+    });
+  });
+  $$("#entryList [data-del]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var i = parseInt(btn.getAttribute("data-del"), 10);
+      if (!confirm('Delete "' + vaultEntries[i].site + '"?')) return;
+      vaultEntries.splice(i, 1);
+      vaultSave();
+      renderVaultEntries();
+      toast("Entry deleted");
+    });
+  });
+}
+
+function vaultAddEntry(){
+  var site = $("#entrySite").value.trim();
+  var user = $("#entryUser").value.trim();
+  var pass = $("#entryPass").value;
+  var msg = $("#vaultEntryMsg");
+  if (!site || !pass){
+    msg.textContent = "⚠ Please fill in Site and Password.";
+    msg.style.color = "var(--red-b)";
+    return;
+  }
+  vaultEntries.push({ site: site, user: user, pass: pass });
+  vaultSave();
+  renderVaultEntries();
+  $("#entrySite").value = "";
+  $("#entryUser").value = "";
+  $("#entryPass").value = "";
+  msg.textContent = "✅ Entry saved and encrypted.";
+  msg.style.color = "var(--em-bright)";
+  toast("Entry saved");
+}
+
+function vaultDelete(){
+  if (!confirm("This permanently deletes the vault and every saved password. Continue?")) return;
+  localStorage.removeItem(VAULT_KEY);
+  vaultMaster = "";
+  vaultEntries = [];
+  vaultShowLocked();
+  $("#vaultUnlockMsg").textContent = "Vault deleted.";
+  $("#vaultUnlockMsg").style.color = "var(--em-bright)";
+  toast("Vault deleted");
+}
+
+$("#vaultCreateBtn").addEventListener("click", vaultCreate);
+$("#vaultUnlockBtn").addEventListener("click", vaultUnlock);
+$("#vaultDeleteBtn").addEventListener("click", vaultDelete);
+$("#vaultLockBtn").addEventListener("click", vaultLock);
+$("#entryAddBtn").addEventListener("click", vaultAddEntry);
+$("#vaultNewPass2").addEventListener("keydown", function(e){ if (e.key === "Enter") vaultCreate(); });
+$("#vaultPass").addEventListener("keydown", function(e){ if (e.key === "Enter") vaultUnlock(); });
+$("#entryGenBtn").addEventListener("click", function(){
+  $("#entryPass").value = makeRandom(18, { lower:true, upper:true, digit:true, symbol:true });
+  toast("Strong password generated");
+});
+
+/* ═══════════════ 5. CONTACT US ═══════════════ */
+$("#contactSendBtn").addEventListener("click", function(){
+  var name    = $("#cName").value.trim();
+  var email   = $("#cEmail").value.trim();
+  var subject = $("#cSubject").value.trim();
+  var message = $("#cMessage").value.trim();
+  var msg = $("#contactMsg");
+
+  if (!name || !email || !message){
+    msg.textContent = "⚠ Please fill in your name, email and message.";
+    msg.className = "form-msg bad";
+    return;
+  }
+  if (email.indexOf("@") === -1 || email.indexOf(".") === -1){
+    msg.textContent = "⚠ Please enter a valid email address.";
+    msg.className = "form-msg bad";
+    return;
+  }
+  msg.textContent = "✅ Thanks " + name + "! Your message has been received. We'll get back to you at " + email + " soon.";
+  msg.className = "form-msg ok";
+  toast("Message sent ✉️");
+  $("#cName").value = "";
+  $("#cEmail").value = "";
+  $("#cSubject").value = "";
+  $("#cMessage").value = "";
+});
+
+/* ═══════════════ 6. AWARENESS QUIZ 🎯 ═══════════════ */
+
+var QUIZ = [
+  {
+    q: "Which of these is the STRONGEST password?",
+    opts: ["Prathmesh@2024", "blue-cactus-river-91!", "P@ssw0rd123", "qwerty!@#"],
+    correct: 1,
+    why: "Long passphrases made of 4+ unlikely words beat short complex-looking strings. 'blue-cactus-river-91!' is 21 chars and easy to remember."
+  },
+  {
+    q: "What does 2FA stand for?",
+    opts: ["Two-Factor Authentication", "Two-File Access", "Total Firewall Activation", "Trusted Fast Access"],
+    correct: 0,
+    why: "2FA = Two-Factor Authentication. It requires a second proof of identity (like a code on your phone) in addition to your password."
+  },
+  {
+    q: "You get an email: 'Your bank account will be closed in 2 hours — click here to verify.' What should you do?",
+    opts: [
+      "Click the link quickly before time runs out",
+      "Reply with your account number",
+      "Ignore the link and open your bank's app directly",
+      "Forward it to your friends to warn them"
+    ],
+    correct: 2,
+    why: "This is a classic phishing email. Urgency is a red flag. Always open the official app or type the bank's address yourself."
+  },
+  {
+    q: "Why is reusing the same password on multiple sites dangerous?",
+    opts: [
+      "It makes login slower",
+      "One breach can compromise ALL your accounts",
+      "Websites will block you",
+      "It uses more memory"
+    ],
+    correct: 1,
+    why: "This attack is called 'credential stuffing'. One leaked password gets tried on every other site you use — Gmail, bank, Amazon, everything."
+  },
+  {
+    q: "Which of these is the MOST secure type of 2FA?",
+    opts: [
+      "SMS code sent to your phone",
+      "A hardware key / passkey",
+      "Email verification link",
+      "Security question about your pet"
+    ],
+    correct: 1,
+    why: "Hardware keys and passkeys are nearly impossible to phish. SMS can be intercepted via SIM-swap. Security questions are easily guessed."
+  },
+  {
+    q: "Your password has appeared in a data breach alert. What's the first thing to do?",
+    opts: [
+      "Wait and see if anything bad happens",
+      "Delete the email notification",
+      "Change the password immediately — on that site and anywhere you reused it",
+      "Post about it on social media"
+    ],
+    correct: 2,
+    why: "Act fast. Change the password on the breached site first, then change it on every other site where you used the same password. Turn on 2FA."
+  },
+  {
+    q: "What makes a password HARDER for a hacker to crack?",
+    opts: [
+      "Using your birthday",
+      "Adding the year at the end",
+      "Making it longer (12+ characters)",
+      "Replacing 'a' with '@' in a dictionary word"
+    ],
+    correct: 2,
+    why: "Length is king. Every extra character multiplies the crack time by ~100×. Birthdays, years, and simple leet-speak are tried early by every cracking tool."
+  },
+  {
+    q: "Which of these is a sign of a phishing website?",
+    opts: [
+      "It uses HTTPS (padlock icon)",
+      "It has professional-looking logos",
+      "The domain has typos like 'amaz0n-login.xyz'",
+      "It loads quickly"
+    ],
+    correct: 2,
+    why: "Typo-squatted domains are a huge red flag. HTTPS only means the connection is encrypted — even scam sites can have HTTPS. Always check the exact domain."
+  }
+];
+
+var quizState = { index: 0, score: 0, started: false };
+
+function showQuizStart(){
+  $("#quizStartCard").hidden = false;
+  $("#quizQuestionCard").hidden = true;
+  $("#quizResultCard").hidden = true;
+}
+
+function startQuiz(){
+  quizState = { index: 0, score: 0, started: true };
+  $("#quizStartCard").hidden = true;
+  $("#quizResultCard").hidden = true;
+  $("#quizQuestionCard").hidden = false;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion(){
+  var q = QUIZ[quizState.index];
+  var n = QUIZ.length;
+  var i = quizState.index;
+
+  $("#quizBar").style.width = (i / n * 100) + "%";
+  $("#quizCounter").textContent = "Question " + (i + 1) + " of " + n;
+  $("#quizScoreLive").textContent = "Score: " + quizState.score;
+  $("#quizQuestionText").textContent = q.q;
+
+  var letters = ["A", "B", "C", "D", "E"];
+  var html = "";
+  for (var k = 0; k < q.opts.length; k++){
+    html += '<button class="quiz-opt" data-idx="' + k + '" type="button">' +
+      '<span class="qo-mark">' + letters[k] + "</span>" +
+      '<span class="qo-text">' + esc(q.opts[k]) + "</span>" +
+    "</button>";
+  }
+  $("#quizOptions").innerHTML = html;
+  $("#quizFeedback").innerHTML = "";
+  $("#quizFeedback").className = "";
+  $("#quizActions").innerHTML = "";
+
+  $$("#quizOptions .quiz-opt").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var picked = parseInt(btn.getAttribute("data-idx"), 10);
+      handleQuizAnswer(picked);
+    });
+  });
+}
+
+function handleQuizAnswer(picked){
+  var q = QUIZ[quizState.index];
+  var isCorrect = picked === q.correct;
+
+  if (isCorrect) quizState.score++;
+
+  var allBtns = $$("#quizOptions .quiz-opt");
+  allBtns.forEach(function(btn, idx){
+    btn.disabled = true;
+    if (idx === q.correct) btn.classList.add("correct");
+    else if (idx === picked) btn.classList.add("wrong");
+    else btn.classList.add("faded");
+  });
+
+  var fb = $("#quizFeedback");
+  fb.className = "quiz-feedback " + (isCorrect ? "ok" : "bad");
+  fb.innerHTML = (isCorrect
+      ? "<b>✅ Correct!</b> "
+      : "<b>❌ Not quite.</b> ") +
+    esc(q.why);
+
+  $("#quizScoreLive").textContent = "Score: " + quizState.score;
+
+  var lastOne = quizState.index === QUIZ.length - 1;
+  var actions = $("#quizActions");
+  actions.innerHTML = '<button class="btn btn-primary" id="quizNextBtn">' +
+    (lastOne ? "See my results →" : "Next question →") + "</button>";
+  $("#quizNextBtn").addEventListener("click", nextQuizQuestion);
+}
+
+function nextQuizQuestion(){
+  quizState.index++;
+  if (quizState.index >= QUIZ.length){
+    endQuiz();
+  } else {
+    renderQuizQuestion();
+  }
+}
+
+function endQuiz(){
+  var total = QUIZ.length;
+  var score = quizState.score;
+  var pct = Math.round(score / total * 100);
+
+  $("#quizBar").style.width = "100%";
+  $("#quizQuestionCard").hidden = true;
+  $("#quizResultCard").hidden = false;
+
+  $("#quizFinalScore").textContent = score + " / " + total;
+  $("#quizFinalPct").textContent = pct + "% correct";
+  $("#qbCorrect").textContent = score;
+  $("#qbWrong").textContent = total - score;
+  $("#qbTotal").textContent = total;
+
+  var grade, msg, color;
+  if (pct === 100){ grade = "🏆 Perfect score!"; color = "#34d399";
+    msg = "You're a cybersecurity pro. Share this quiz with a friend — most people get at least one wrong."; }
+  else if (pct >= 75){ grade = "🟢 Excellent"; color = "#10b981";
+    msg = "You've got the core habits down. Skim the sections you missed and try again for a perfect score."; }
+  else if (pct >= 50){ grade = "🟡 Good start"; color = "#fbbf24";
+    msg = "You know the basics. Review the sections above — especially phishing and 2FA — and try again."; }
+  else { grade = "🔴 Time to brush up"; color = "#f87171";
+    msg = "Head back up to the Awareness Hub sections above. Each one is short and will make a huge difference."; }
+
+  $("#quizGrade").textContent = grade;
+  $("#quizGrade").style.color = color;
+  $("#quizGradeMsg").textContent = msg;
+}
+
+$("#quizStartBtn").addEventListener("click", startQuiz);
+$("#quizRetryBtn").addEventListener("click", startQuiz);
+
+/* ═══════════════ 7. BOOT ═══════════════ */
+document.addEventListener("DOMContentLoaded", function(){
+  route();
+  runAnalyzer();
+  vaultShowLocked();
+  showQuizStart();
+});
+</script>
+
+</body>
+</html>
